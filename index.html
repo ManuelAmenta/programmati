@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Programmati</title>
+
+<style>
+body {
+    margin: 0;
+    padding: 40px;
+    background: #f0f2f5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 40px;
+    box-sizing: border-box;
+    background: white;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #004080;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+input:focus {
+    border-color: #004080;
+    outline: none;
+    box-shadow: 0 0 5px rgba(0,64,128,0.3);
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: #004080;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0059b3;
+}
+
+.btn-secondary {
+    background-color: #e0e0e0;
+}
+
+.btn-secondary:hover {
+    background-color: #cfcfcf;
+}
+
+.btn-elimina {
+    background-color: #ff0000;
+}
+
+.btn-elimina:hover {
+    background-color: #ff7979;
+}
+
+.programmato {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 5px;
+    background: #f9f9f9;
+}
+
+.header-page {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* spazio tra logo e h2 */
+    margin-bottom: 20px;
+}
+
+.logo-page {
+    height: 72px;
+    width: auto;
+}
+
+@media print {
+    body {
+        background: white;
+        padding: 0;
+        margin: 0;
+    }
+
+    #formPage {
+        display: none;
+    }
+
+    .page {
+        width: 210mm;
+        min-height: 297mm;
+        margin: 0;
+        padding: 15mm;
+        box-shadow: none;
+        page-break-after: always;
+        break-after: page;
+    }
+
+    .programmato {
+        page-break-inside: avoid;
+    }
+
+    button {
+        display: none;
+    }
+	
+}
+</style>
+</head>
+<body>
+
+<!-- PAGINA FORM -->
+<div class="page" id="formPage">
+    <h1>Inserisci Programmato</h1>
+
+    <div class="form-row">
+        <input id="nomePaziente" placeholder="Nome paziente">
+        <input id="cognomePaziente" placeholder="Cognome paziente">
+    </div>
+
+    <div class="form-row">
+        <input id="viaPaziente" placeholder="Via">
+        <input id="luogoRecupero" placeholder="Luogo recupero">
+    </div>
+
+    <div class="form-row">
+        <input id="volontari" placeholder="Volontari separati da virgola">
+    </div>
+
+    <div class="form-row">
+        <input id="dataServizio" type="date">
+        <input id="orario" type="time">
+        <input id="mezzo" placeholder="Mezzo utilizzato">
+    </div>
+
+    <div class="form-actions">
+        <button class="btn-primary" onclick="aggiungiProgrammato()">Aggiungi</button>
+        <button class="btn-secondary" onclick="window.print()">Stampa</button>
+		<button class="btn-secondary" onclick="pulisciCampi()">Pulisci campi</button>
+    </div>
+	
+	<br/>
+	
+    <div id="riassuntoProgrammato"></div>
+</div>
+<!-- CONTENITORE LISTA -->
+<div id="contenitoreProgrammati"></div>
+
+<script>
+
+	let programmati = [];
+	const maxPerPagina = 5;
+
+	function aggiungiProgrammato() {
+
+		const nomePaziente = document.getElementById("nomePaziente").value;
+		const cognomePaziente = document.getElementById("cognomePaziente").value;
+		const viaPaziente = document.getElementById("viaPaziente").value;
+		const luogoRecupero = document.getElementById("luogoRecupero").value;
+
+		const volontariInput = document.getElementById("volontari").value;
+		const volontari = volontariInput.split(",");
+
+		const orario = document.getElementById("orario").value;
+		const mezzo = document.getElementById("mezzo").value;
+		const dataServizio = document.getElementById("dataServizio").value;
+		
+		programmati.push({
+			paziente: {
+				nome: nomePaziente,
+				cognome: cognomePaziente,
+				via: viaPaziente,
+				recupero: luogoRecupero
+			},
+			volontari: volontari,
+			data: dataServizio,
+			orario: orario,
+			mezzo: mezzo
+		});
+		mostraRiassunto();
+		mostraLista();
+	}
+
+	function mostraLista() {
+
+		const contenitore = document.getElementById("contenitoreProgrammati");
+		contenitore.innerHTML = "";
+
+		let paginaCorrente;
+
+		programmati.forEach((p, index) => {
+
+			if(index % maxPerPagina === 0) {
+
+				paginaCorrente = document.createElement("div");
+				paginaCorrente.className = "page";
+
+				paginaCorrente.innerHTML = `
+					<div class="header-page">
+						<img src="C:\\Users\\amenta\\Desktop\\checkList\\logoCri.png" alt="Logo CRI" class="logo-page">
+						<h2>Programmati CRI Serra Riccò</h2>
+					</div>
+					<div class="listaProgrammati"></div>
+				`;
+
+				contenitore.appendChild(paginaCorrente);
+			}
+
+			const lista = paginaCorrente.querySelector(".listaProgrammati");
+
+			const nuovo = document.createElement("div");
+			nuovo.className = "programmato";
+
+			nuovo.innerHTML = `
+				<b>Paziente:</b> ${p.paziente.nome} ${p.paziente.cognome}<br>
+				<b>Via:</b> ${p.paziente.via}<br>
+				<b>Recupero:</b> ${p.paziente.recupero}<br>
+				<b>Volontari:</b> ${p.volontari.join(", ")}<br>
+				<b>Orario:</b> ${p.orario}<br>
+				<b>Mezzo:</b> ${p.mezzo}
+			`;
+
+			lista.appendChild(nuovo);
+		});
+	}
+
+	function mostraRiassunto() {
+
+		const riassunto = document.getElementById("riassuntoProgrammato");
+
+		let html = `
+			<table border="1" width="100%" cellspacing="0" cellpadding="5">
+				<tr>
+					<th>Riassunto Servizio</th>
+					<th>Elimina</th>
+				</tr>
+		`;
+
+		programmati.forEach((p, index) => {
+
+			html += `
+				<tr>
+					<td>
+						Servizio ${p.paziente.nome} ${p.paziente.cognome},
+						in via ${p.paziente.via},
+						in data ${p.data},
+						alle ore ${p.orario}.
+						(${p.volontari.join(", ")})
+					</td>
+					<td>
+						<button class="btn-elimina" onclick="eliminaProgrammato(${index})">Elimina</button>
+					</td>
+				</tr>
+			`;
+		});
+
+		html += `</table>`;
+
+		riassunto.innerHTML = html;
+	}
+
+	function eliminaProgrammato(index) {
+		programmati.splice(index, 1);
+		mostraRiassunto();
+		mostraLista();
+	}
+	
+	function pulisciCampi() {
+		document.getElementById("nomePaziente").value = "";
+		document.getElementById("cognomePaziente").value = "";
+		document.getElementById("viaPaziente").value = "";
+		document.getElementById("luogoRecupero").value = "";
+		document.getElementById("volontari").value = "";
+		document.getElementById("dataServizio").value = "";
+		document.getElementById("orario").value = "";
+		document.getElementById("mezzo").value = "";
+		document.getElementById("nomePaziente").focus();
+	}
+
+</script>
+
+</body>
+</html>
